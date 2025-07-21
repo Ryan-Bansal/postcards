@@ -1,8 +1,84 @@
 ---
 title: "Voting and Postcards"
 author: "Ryan"
+execute: 
+  echo: false
 ---
 
-This is a Quarto website.
+```{r setup}
+#| message: false
+library(tidyverse)
+library(primer.data)
+library(tidymodels)
+library(broom)
+library(marginaleffects)
+library(gt)
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+```
+
+
+# Data prep
+x <- shaming |> 
+  mutate(civ_engage = primary_00 + primary_02 + primary_04 + 
+               general_00 + general_02 + general_04) |> 
+  select(primary_06, treatment, sex, age, civ_engage) |> 
+  mutate(voter_class = factor(
+    case_when(
+      civ_engage %in% c(5, 6) ~ "Always Vote",
+      civ_engage %in% c(3, 4) ~ "Sometimes Vote",
+      civ_engage %in% c(1, 2) ~ "Rarely Vote"),
+         levels = c("Rarely Vote", 
+                    "Sometimes Vote", 
+                    "Always Vote"))) |>
+  mutate(voted = as.factor(primary_06))
+
+
+
+```{r}
+#| cache: true
+fit_vote <- logistic_reg(engine = "glm") |>
+  fit(voted ~ age + sex + treatment * voter_class, data = x)
+
+```
+
+
+# Get predictions for plotting
+preds <- plot_predictions(fit_vote, type = "prob", condition = c("treatment", "voter_class"), draw = FALSE)
+
+# Create the plot
+baseline <- preds |>
+  filter(treatment == "No Postcard") |>
+  select(voter_class, baseline_est = estimate)
+
+plot_df <- preds |>
+  left_join(baseline, by = "voter_class") |>
+  mutate(
+    increase_pct = 100 * (estimate - baseline_est)
+  )
+
+plot_df |>
+  filter(treatment != "No Postcard", increase_pct > 0) |>
+  ggplot(aes(x = treatment, y = increase_pct, fill = voter_class)) +
+  geom_col(position = position_dodge(width = 0.8)) +
+  labs(
+    title = "Percentage Point Increase in Voting by Treatment and Voter Class",
+    subtitle = "Turnout gains from postcards are largest for infrequent voters and smallest for those who always vote.",
+    y = "Increase in Predicted Probability (%)",
+    x = "Postcard Type",
+    fill = "Voter Class",
+    caption = "Michigan 2006 primary voting results"
+  ) +
+  theme_minimal(base_size = 16)
+
+Sending postcards to registered voters is a traditional element of US campaigns. For this analysis, we use data from a 2006 field experiment in Michigan to inform strategies for increasing turnout in the current Texas gubernatorial election. However, we recognize that Michigan may differ from Texas and the broader US. To estimate likely effects, we fit a logistic regression model predicting voter turnout as a function of postcard treatment, voter engagement (including interaction effects), sex, and age. This structure helps us isolate the impact of different mailings on various types of voters.
+
+The model predicts that the largest turnout gains from postcards occur among infrequent voters, with the “Neighbors” and “Self” treatments showing the biggest positive impact. Confidence intervals suggest these effects are statistically meaningful, but assumptions such as validity and stability should be kept in mind when interpreting these results.
+
+# Display model coefficients table
+tidy(fit_vote, conf.int = TRUE) |>
+  select(term, estimate, conf.low, conf.high) |>
+  gt() |>
+  tab_header(title = "Estimated Effects from Voting Model") |>
+  tab_source_note(
+    source_note = "Source: 2006 Michigan primary voting results. Estimates on log-odds scale. 95% confidence intervals."
+  )
