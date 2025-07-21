@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Voting and Postcards",
+    "section": "",
+    "text": "Warning: package 'tidyr' was built under R version 4.5.1\n\n\nWarning: package 'purrr' was built under R version 4.5.1\n\n\nWarning: package 'dplyr' was built under R version 4.5.1\n\n\n\n\nWarning in left_join(preds, baseline, by = \"voter_class\"): Detected an unexpected many-to-many relationship between `x` and `y`.\nℹ Row 1 of `x` matches multiple rows in `y`.\nℹ Row 1 of `y` matches multiple rows in `x`.\nℹ If a many-to-many relationship is expected, set `relationship =\n  \"many-to-many\"` to silence this warning.\n\n\n\n\n\n\n\n\n\nThis analysis uses data from a 2006 Michigan field experiment to study the effect of different postcard treatments on voter turnout. We fit a logistic regression model including treatment type, voter engagement, sex, and age. Results show that certain postcards, especially the ‘Neighbors’ and ‘Self’ treatments, increase turnout more among infrequent voters. While the model provides useful estimates, uncertainty and assumptions mean results should be interpreted cautiously."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site"
+  }
+]
